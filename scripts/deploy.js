@@ -9,19 +9,17 @@ const hre = require("hardhat");
 async function main() {
 
 
-  const MultiSig = await hre.ethers.getContractFactory("MultiSig");
-  const multisig = await MultiSig.deploy();
+  // const MultiSig = await hre.ethers.getContractFactory("MultiSig");
+  // const multisig = await MultiSig.deploy();
 
-  await multisig.deployed();
+  // await multisig.deployed();
 
-  const Factory = await hre.ethers.getContractFactory("Factory");
+  const Factory = await hre.ethers.getContractFactory("ZarFactory");
   const factory = await Factory.deploy();
 
-  await facory.deployed();
+  await factory.deployed();
 
-  console.log(
-    `Multisig deployed to ${multisig.address}`
-  );
+ 
 
   console.log(`Factory deployed ${factory.address}`);
 }
