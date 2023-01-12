@@ -3,7 +3,14 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/// @title Multisig
+/// @author Zartaj
+/// @notice this contract serves you as a joint wallet where you and your partners can store your funds
+/// safely and can only withdraw if everyone agrees on the withdrawl
+/// @dev This is the base contract. Users will create wallet from the factory contract.
+
 contract MultiSig {
+    //events
     event DepositedEther(address depositor, uint amount, uint timestamp);
     event DepositedErc20(
         address depositor,
@@ -27,19 +34,22 @@ contract MultiSig {
     event Approved(address approvedBy, Transaction transaction, uint timestamp);
     event Executed(address to, Transaction transaction, uint timestamp);
 
+    //state Variables
     uint256 requiredApproval;
     address[] owners;
     Transaction[] transactions;
-
+    //mapppings
     mapping(address => bool) private isOwner;
     mapping(uint256 => mapping(address => bool)) private confirmed;
-    mapping (uint => address) internal TokenAddress;
+    mapping(uint => address) internal TokenAddress;
 
+    //enum
     enum Type {
         ERC20,
         Ether
     }
 
+    //structs
     struct Transaction {
         address submittedBy;
         address to;
@@ -51,8 +61,9 @@ contract MultiSig {
         Type _type;
     }
 
+    //modifiers
     modifier onlyOwner() {
-        require(isOwner[msg.sender], "you are not an ownerFF");
+        require(isOwner[msg.sender], "you are not an owner");
         _;
     }
 
@@ -69,6 +80,7 @@ contract MultiSig {
         _;
     }
 
+    //constructor
     constructor(address[] memory _owners, uint256 _required) {
         require(_owners.length > 1, "must be mmore than 1 owner");
         require(
@@ -88,10 +100,20 @@ contract MultiSig {
         requiredApproval = _required;
     }
 
+    function allTxs() external view returns (Transaction[] memory) {
+        return transactions;
+    }
+
+    //view functions
+    function singleTx(uint _index) external view returns (Transaction memory) {
+        return transactions[_index];
+    }
+
     function balanceErc20(address ERC20) public view returns (uint) {
         return IERC20(ERC20).balanceOf(address(this));
     }
 
+    //write functions
     function submitERC20Tx(
         address _to,
         address ERC20,
@@ -119,6 +141,8 @@ contract MultiSig {
         );
 
         TokenAddress[_txIndex] = ERC20;
+
+        emit SubmittedErc20(msg.sender, _to, ERC20, _amount, block.timestamp);
     }
 
     function submitEtherTx(
@@ -142,6 +166,8 @@ contract MultiSig {
                 _type: Type.Ether
             })
         );
+
+        emit SubmittedEther(msg.sender, _to, _amount, block.timestamp);
     }
 
     function approveTx(
@@ -158,6 +184,7 @@ contract MultiSig {
         if (transactions[_txIndex].confirmCount == requiredApproval) {
             executeTx(_txIndex);
         }
+        emit Approved(msg.sender, transactions[_txIndex], block.timestamp);
     }
 
     function executeTx(uint256 _txIndex) internal notExecuted(_txIndex) {
@@ -173,17 +200,12 @@ contract MultiSig {
         } else {
             address token = TokenAddress[_txIndex];
 
-            IERC20(token).transfer(transaction.to,transaction.amount);
+            IERC20(token).transfer(transaction.to, transaction.amount);
         }
+        emit Executed(transaction.to, transaction, block.timestamp);
     }
 
-    function allTxs() external view returns (Transaction[] memory) {
-        return transactions;
+    receive() external payable {
+        emit DepositedEther(msg.sender, msg.value, block.timestamp);
     }
-
-    function singleTx(uint _index) external view returns (Transaction memory) {
-        return transactions[_index];
-    }
-
-    receive() external payable {}
 }
