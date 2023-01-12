@@ -9,14 +9,21 @@ const hre = require("hardhat");
 async function main() {
 
 
-  const Lock = await hre.ethers.getContractFactory("MultiSig");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  const MultiSig = await hre.ethers.getContractFactory("MultiSig");
+  const multisig = await MultiSig.deploy();
 
-  await lock.deployed();
+  await multisig.deployed();
+
+  const Factory = await hre.ethers.getContractFactory("Factory");
+  const factory = await Factory.deploy();
+
+  await facory.deployed();
 
   console.log(
-    `deployed to ${lock.address}`
+    `Multisig deployed to ${multisig.address}`
   );
+
+  console.log(`Factory deployed ${factory.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
