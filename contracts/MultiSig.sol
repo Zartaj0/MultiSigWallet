@@ -100,13 +100,19 @@ contract MultiSig {
         requiredApproval = _required;
     }
 
+    //view functions
+    function showOwners() external view returns (address[] memory) {
+        return owners;
+    }
+
     function allTxs() external view returns (Transaction[] memory) {
         return transactions;
     }
 
-    //view functions
-    function singleTx(uint _index) external view returns (Transaction memory) {
-        return transactions[_index];
+    function singleTx(
+        uint _index
+    ) external view returns (Transaction memory transaction) {
+        return (transactions[_index]);
     }
 
     function balanceErc20(address ERC20) public view returns (uint) {
@@ -119,7 +125,7 @@ contract MultiSig {
         address ERC20,
         uint _amount,
         bytes memory _data
-    ) external {
+    ) external onlyOwner {
         uint balance = balanceErc20(ERC20);
 
         require(_amount <= balance, "Not enough balance");
@@ -199,6 +205,7 @@ contract MultiSig {
             require(result, " tx failed ");
         } else {
             address token = TokenAddress[_txIndex];
+            transaction.executed = true;
 
             IERC20(token).transfer(transaction.to, transaction.amount);
         }
