@@ -37,9 +37,12 @@ contract MultiSig {
         uint256 timestamp
     );
     event Executed(address to, Transaction transaction, uint256 timestamp);
+    event AddedOwner(address newOwner, uint256 timestamp);
+    event removedOwner(address wasOwner, uint256 timestamp);
+    event changedPolicy(uint256 newPolicy, uint256 timestamp);
 
     //state Variables
-    uint256 requiredApproval;
+    uint256 public requiredApproval;
     address[] owners;
     Transaction[] transactions;
     Proposal[] proposals;
@@ -94,85 +97,6 @@ contract MultiSig {
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-    function submitProposalForOwner(
-        uint8 _proposalType,
-        address _owner,
-        uint256 _requiredSign
-    ) external onlyOwner {
-        if (_proposalType == 0) {
-            uint256 _Index = proposals.length;
-            proposals.push(
-                Proposal({
-                    submittedBy: msg.sender,
-                    proposalType: ProposalType(_proposalType),
-                    Index: _Index,
-                    executed: false,
-                    confirmCount: 1
-                })
-            );
-            OwnerMap[_Index] = OwnerProposal({
-                owner: _owner,
-                proposalType: ProposalType(_proposalType)
-            });
-        } else if (_proposalType == 1) {
-            uint256 _Index = proposals.length;
-            proposals.push(
-                Proposal({
-                    submittedBy: msg.sender,
-                    proposalType: ProposalType(_proposalType),
-                    Index: _Index,
-                    executed: false,
-                    confirmCount: 1
-                })
-            );
-            OwnerMap[_Index] = OwnerProposal({
-                owner: _owner,
-                proposalType: ProposalType(_proposalType)
-            });
-        } else if (_proposalType == 2) {
-            uint256 _Index = proposals.length;
-            proposals.push(
-                Proposal({
-                    submittedBy: msg.sender,
-                    proposalType: ProposalType(2),
-                    Index: _Index,
-                    executed: false,
-                    confirmCount: 1
-                })
-            );
-            PolicyMap[_Index] = ChangeRequiredSign({
-                previousSignRequirement: requiredApproval,
-                newRequiredSign: _requiredSign
-            });
-        }
-    }
-
-    function approveProposal(uint256 _index) external onlyOwner {
-        require(_index < proposals.length, "invalid index");
-        require(!confirmedProposal[_index][msg.sender], "Already approved");
-
-        confirmedProposal[_index][msg.sender] = true;
-        proposals[_index].confirmCount += 1;
-    }
-
-    function executeProposal(uint256 _index) external onlyOwner {
-        require(!proposals[_index].executed, "Already executed");
-        require(
-            proposals[_index].confirmCount == requiredApproval,
-            "Not approved by everyone"
-        );
-
-        if (proposals[_index].proposalType == ProposalType(0)) {
-            address ownerToRemove = OwnerMap[_index].owner;
-            isOwner[ownerToRemove] = false;
-            for (uint256 i; i < proposals.length; ++i) {
-                proposals[i] = proposals[i + 1];
-            }
-            proposals.pop();
-        } else if (
-            proposals[_index].proposalType == ProposalType(1)
-        ) {} else if (proposals[_index].proposalType == ProposalType(2)) {}
-    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -244,7 +168,22 @@ contract MultiSig {
         return TokenAddress[_txIndex];
     }
 
+    function allproposals() external view returns (Proposal[] memory) {
+        return proposals;
+    }
+
+    function singleProposal(uint256 _index)
+        external
+        view
+        returns (Proposal memory)
+    {
+        return proposals[_index];
+    }
+
     //write functions
+
+    //Submit Proposals and Transactions
+
     function submitERC20Tx(
         address _to,
         address ERC20,
@@ -301,6 +240,63 @@ contract MultiSig {
         emit SubmittedEther(msg.sender, _to, _amount, block.timestamp);
     }
 
+    function submitProposal(
+        uint8 _proposalType,
+        address _owner,
+        uint256 _requiredSign
+    ) external onlyOwner {
+        if (_proposalType == 0) {
+            uint256 _index = proposals.length;
+            proposals.push(
+                Proposal({
+                    submittedBy: msg.sender,
+                    proposalType: ProposalType(_proposalType),
+                    Index: _index,
+                    executed: false,
+                    confirmCount: 1
+                })
+            );
+            OwnerMap[_index] = OwnerProposal({
+                owner: _owner,
+                proposalType: ProposalType(_proposalType)
+            });
+            confirmedProposal[_index][msg.sender] = true;
+        } else if (_proposalType == 1) {
+            uint256 _index = proposals.length;
+            proposals.push(
+                Proposal({
+                    submittedBy: msg.sender,
+                    proposalType: ProposalType(_proposalType),
+                    Index: _index,
+                    executed: false,
+                    confirmCount: 1
+                })
+            );
+            OwnerMap[_index] = OwnerProposal({
+                owner: _owner,
+                proposalType: ProposalType(_proposalType)
+            });
+            confirmedProposal[_index][msg.sender] = true;
+        } else if (_proposalType == 2) {
+            uint256 _index = proposals.length;
+            proposals.push(
+                Proposal({
+                    submittedBy: msg.sender,
+                    proposalType: ProposalType(2),
+                    Index: _index,
+                    executed: false,
+                    confirmCount: 1
+                })
+            );
+            PolicyMap[_index] = ChangeRequiredSign({
+                previousSignRequirement: requiredApproval,
+                newRequiredSign: _requiredSign
+            });
+            confirmedProposal[_index][msg.sender] = true;
+        }
+    }
+
+    // Approve transaction and Approve Proposals
     function approveTx(uint256 _txIndex)
         external
         onlyOwner
@@ -323,6 +319,21 @@ contract MultiSig {
         emit Approved(msg.sender, transactions[_txIndex], block.timestamp);
     }
 
+    function approveProposal(uint256 _index) external onlyOwner {
+        require(_index < proposals.length, "invalid index");
+        require(!proposals[_index].executed, "Already executed");
+        require(!confirmedProposal[_index][msg.sender], "Already approved");
+
+        confirmedProposal[_index][msg.sender] = true;
+        proposals[_index].confirmCount += 1;
+
+        if (proposals[_index].confirmCount == requiredApproval) {
+            executeProposal(_index);
+        }
+    }
+
+    // Execute transaction and Execute Proposals
+
     function executeTx(uint256 _txIndex) internal notExecuted(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
 
@@ -340,6 +351,34 @@ contract MultiSig {
             IERC20(token).transfer(transaction.to, transaction.amount);
         }
         emit Executed(transaction.to, transaction, block.timestamp);
+    }
+
+    function executeProposal(uint256 _index) internal onlyOwner {
+        require(!proposals[_index].executed, "Already executed");
+        require(
+            proposals[_index].confirmCount == requiredApproval,
+            "Not approved by everyone"
+        );
+
+        if (proposals[_index].proposalType == ProposalType(0)) {
+            address ownerToRemove = OwnerMap[_index].owner;
+            isOwner[ownerToRemove] = false;
+            for (uint256 i; i < proposals.length; ++i) {
+                proposals[i] = proposals[i + 1];
+            }
+            proposals.pop();
+
+            emit removedOwner(ownerToRemove, block.timestamp);
+        } else if (proposals[_index].proposalType == ProposalType(1)) {
+            address ownerToAdd = OwnerMap[_index].owner;
+            isOwner[ownerToAdd] = true;
+            owners.push(ownerToAdd);
+            emit AddedOwner(ownerToAdd, block.timestamp);
+        } else if (proposals[_index].proposalType == ProposalType(2)) {
+            uint256 policyToChange = PolicyMap[_index].newRequiredSign;
+            requiredApproval = policyToChange;
+            emit changedPolicy(policyToChange, block.timestamp);
+        }
     }
 
     receive() external payable {
