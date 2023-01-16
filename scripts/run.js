@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const send_abi = require("./abi.json");
 
-let contract_address = "0x83b3c46a13512E692e656F9FCDa81667F72BB95E"
+let contract_address = "0x37c779a1564DCc0e3914aB130e0e787d93e21804"
 
 ethersProvider = new ethers.providers.AlchemyProvider("maticmum",process.env.ALCHEMY_MUMBAI_API)
 
@@ -37,7 +37,6 @@ async function createWallet(
                 
                   await contract.CreateWallet(_address,3).then((transferResult) => {
                         console.dir(transferResult)
-                        console.log("sent token")
                     }).catch(error => console.log(error))
                 
             }
