@@ -186,7 +186,7 @@ contract MultiSig {
         return address(this).balance;
     }
 
-    function checkOwner(address _addr) external view returns(bool){
+    function checkOwner(address _addr) external view returns (bool) {
         return isOwner[_addr];
     }
 
@@ -199,7 +199,7 @@ contract MultiSig {
         address ERC20,
         uint256 _amount,
         bytes memory _data
-    ) external onlyOwner {
+    ) external onlyOwner isPaused {
         uint256 balance = balanceErc20(ERC20);
 
         require(_amount <= balance, "Not enough balance");
@@ -229,8 +229,8 @@ contract MultiSig {
         address _to,
         uint256 _amount,
         bytes calldata _data
-    ) external onlyOwner {
-        require(_amount< balanceEther(),"Not enough balance");
+    ) external onlyOwner isPaused {
+        require(_amount < balanceEther(), "Not enough balance");
         uint256 _txIndex = transactions.length;
 
         confirmedTx[_txIndex][msg.sender] = true;
@@ -258,6 +258,7 @@ contract MultiSig {
         bool _pause
     ) external onlyOwner {
         if (_proposalType == 0) {
+            require(!paused, "Wallet is paused ");
             uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
@@ -274,6 +275,7 @@ contract MultiSig {
             });
             confirmedProposal[_index][msg.sender] = true;
         } else if (_proposalType == 1) {
+            require(!paused, "Wallet is paused ");
             uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
@@ -290,6 +292,7 @@ contract MultiSig {
             });
             confirmedProposal[_index][msg.sender] = true;
         } else if (_proposalType == 2) {
+            require(!paused, "Wallet is paused ");
             uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
@@ -327,6 +330,7 @@ contract MultiSig {
     )
         external
         onlyOwner
+        isPaused
         txExist(_txIndex)
         notExecuted(_txIndex)
         notconfirmedTx(_txIndex)
@@ -351,11 +355,22 @@ contract MultiSig {
         require(!proposals[_index].executed, "Already executed");
         require(!confirmedProposal[_index][msg.sender], "Already approved");
 
-        confirmedProposal[_index][msg.sender] = true;
-        proposals[_index].confirmCount += 1;
+        if (proposals[_index].proposalType != ProposalType.pause) {
+            require(!paused, "Wallet is paused ");
 
-        if (proposals[_index].confirmCount == requiredApproval) {
-            executeProposal(_index);
+            confirmedProposal[_index][msg.sender] = true;
+            proposals[_index].confirmCount += 1;
+
+            if (proposals[_index].confirmCount == requiredApproval) {
+                executeProposal(_index);
+            }
+        } else {
+            confirmedProposal[_index][msg.sender] = true;
+            proposals[_index].confirmCount += 1;
+
+            if (proposals[_index].confirmCount == requiredApproval) {
+                executeProposal(_index);
+            }
         }
     }
 
