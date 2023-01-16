@@ -103,7 +103,6 @@ contract MultiSig {
         bool _pause;
     }
 
-
     //modifiers
     modifier onlyOwner() {
         require(isOwner[msg.sender], "you are not an owner");
@@ -111,7 +110,7 @@ contract MultiSig {
     }
 
     modifier txExist(uint256 _txIndex) {
-        require(_txIndex < transactions.length, " transaction doesn't exist");
+        require(_txIndex < transactions.length, "transaction doesn't exist");
         _;
     }
     modifier notExecuted(uint256 _txIndex) {
@@ -157,11 +156,9 @@ contract MultiSig {
         return transactions;
     }
 
-    function singleTx(uint256 _index)
-        external
-        view
-        returns (Transaction memory transaction)
-    {
+    function singleTx(
+        uint256 _index
+    ) external view returns (Transaction memory transaction) {
         return (transactions[_index]);
     }
 
@@ -169,11 +166,9 @@ contract MultiSig {
         return IERC20(ERC20).balanceOf(address(this));
     }
 
-    function TokenAddressForsubmittedTx(uint256 _txIndex)
-        external
-        view
-        returns (address)
-    {
+    function TokenAddressForsubmittedTx(
+        uint256 _txIndex
+    ) external view returns (address) {
         return TokenAddress[_txIndex];
     }
 
@@ -181,12 +176,18 @@ contract MultiSig {
         return proposals;
     }
 
-    function singleProposal(uint256 _index)
-        external
-        view
-        returns (Proposal memory)
-    {
+    function singleProposal(
+        uint256 _index
+    ) external view returns (Proposal memory) {
         return proposals[_index];
+    }
+
+    function balanceEther() public view returns (uint) {
+        return address(this).balance;
+    }
+
+    function checkOwner(address _addr) external view returns(bool){
+        return isOwner[_addr];
     }
 
     //write functions
@@ -229,6 +230,7 @@ contract MultiSig {
         uint256 _amount,
         bytes calldata _data
     ) external onlyOwner {
+        require(_amount< balanceEther(),"Not enough balance");
         uint256 _txIndex = transactions.length;
 
         confirmedTx[_txIndex][msg.sender] = true;
@@ -320,7 +322,9 @@ contract MultiSig {
     }
 
     // Approve transaction and Approve Proposals
-    function approveTx(uint256 _txIndex)
+    function approveTx(
+        uint256 _txIndex
+    )
         external
         onlyOwner
         txExist(_txIndex)
@@ -357,11 +361,9 @@ contract MultiSig {
 
     // Execute transaction and Execute Proposals
 
-    function executeTx(uint256 _txIndex)
-        internal
-        notExecuted(_txIndex)
-        isPaused
-    {
+    function executeTx(
+        uint256 _txIndex
+    ) internal notExecuted(_txIndex) isPaused {
         Transaction storage transaction = transactions[_txIndex];
 
         if (transaction._type == Type.Ether) {
@@ -418,4 +420,3 @@ contract MultiSig {
         emit DepositedEther(msg.sender, msg.value, block.timestamp);
     }
 }
-
