@@ -69,7 +69,7 @@ describe.only("MultiSig", function () {
 
 
 
-  describe("Transactions", async function () {
+  describe("Ether Transactions", async function () {
 
     this.beforeEach(async () => {
 
@@ -97,6 +97,23 @@ describe.only("MultiSig", function () {
       expect(BigInt(await ethers.provider.getBalance(notOwner.address))).to.be.equal(newBalance + balanceBefore);
     });
 
+  })
+
+  describe("ERC20 transaction",async ()=>{
+    this.beforeEach(async () =>{
+
+    })
+
+    it("should show the balance of ERC20 token", async ()=>{
+
+    })
+    
+    it("owner is able to submit a transaction", async ()=>{
+      
+    })
+    it("non-Owner is not able to submit transaction", async ()=>{
+      
+    })
   })
 
 
