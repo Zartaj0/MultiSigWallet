@@ -12,6 +12,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract MultiSig {
     //events
     event DepositedEther(address depositor, uint256 amount, uint256 timestamp);
+    event DepositedErc20(
+        address depositor,
+        uint256 amount,
+        address TokenAddress,
+        uint256 timestamp
+    );
     event SubmittedErc20(
         address SubmittedBy,
         address to,
@@ -25,24 +31,19 @@ contract MultiSig {
         uint256 amount,
         uint256 timestamp
     );
-    event submittedPropsal(
-        address submittedby,
-        uint index,
-        uint timestamp,
-        ProposalType _type
-    );
     event Approved(
         address approvedBy,
         Transaction transaction,
         uint256 timestamp
     );
     event Executed(address to, Transaction transaction, uint256 timestamp);
-    event AddedOwner(uint index, address newOwner, uint256 timestamp);
-    event removedOwner(uint index, address wasOwner, uint256 timestamp);
-    event changedPolicy(uint index, uint256 newPolicy, uint256 timestamp);
+    event AddedOwner(address newOwner, uint256 timestamp);
+    event removedOwner(address wasOwner, uint256 timestamp);
+    event changedPolicy(uint256 newPolicy, uint256 timestamp);
 
     //state Variables
     uint256 public requiredApproval;
+    bool paused;
     address[] owners;
     Transaction[] transactions;
     Proposal[] proposals;
@@ -53,6 +54,7 @@ contract MultiSig {
     mapping(uint256 => mapping(address => bool)) private confirmedProposal;
     mapping(uint256 => OwnerProposal) internal OwnerMap;
     mapping(uint256 => ChangeRequiredSign) internal PolicyMap;
+    mapping(uint256 => pauseUnpause) internal PauseMap;
     mapping(uint256 => address) internal TokenAddress;
 
     //enum
@@ -63,7 +65,8 @@ contract MultiSig {
     enum ProposalType {
         RevokeOwner,
         AddNewOwner,
-        ChangeRequired
+        ChangeRequired,
+        pause
     }
 
     //structs
@@ -96,6 +99,11 @@ contract MultiSig {
         uint256 newRequiredSign;
     }
 
+    struct pauseUnpause {
+        bool _pause;
+    }
+
+
     //modifiers
     modifier onlyOwner() {
         require(isOwner[msg.sender], "you are not an owner");
@@ -112,6 +120,11 @@ contract MultiSig {
     }
     modifier notconfirmedTx(uint256 _txIndex) {
         require(!confirmedTx[_txIndex][msg.sender], "Already confirmedTx");
+        _;
+    }
+
+    modifier isPaused() {
+        require(!paused, "Wallet is paused ");
         _;
     }
 
@@ -144,9 +157,11 @@ contract MultiSig {
         return transactions;
     }
 
-    function singleTx(
-        uint256 _index
-    ) external view returns (Transaction memory transaction) {
+    function singleTx(uint256 _index)
+        external
+        view
+        returns (Transaction memory transaction)
+    {
         return (transactions[_index]);
     }
 
@@ -154,9 +169,11 @@ contract MultiSig {
         return IERC20(ERC20).balanceOf(address(this));
     }
 
-    function TokenAddressForsubmittedTx(
-        uint256 _txIndex
-    ) external view returns (address) {
+    function TokenAddressForsubmittedTx(uint256 _txIndex)
+        external
+        view
+        returns (address)
+    {
         return TokenAddress[_txIndex];
     }
 
@@ -164,16 +181,18 @@ contract MultiSig {
         return proposals;
     }
 
-    function singleProposal(
-        uint256 _index
-    ) external view returns (Proposal memory) {
+    function singleProposal(uint256 _index)
+        external
+        view
+        returns (Proposal memory)
+    {
         return proposals[_index];
     }
 
     //write functions
 
     //Submit Proposals and Transactions
-//submit ERC20 transaction
+
     function submitERC20Tx(
         address _to,
         address ERC20,
@@ -204,7 +223,7 @@ contract MultiSig {
 
         emit SubmittedErc20(msg.sender, _to, ERC20, _amount, block.timestamp);
     }
-//Submit ether transaction
+
     function submitEtherTx(
         address _to,
         uint256 _amount,
@@ -229,11 +248,12 @@ contract MultiSig {
 
         emit SubmittedEther(msg.sender, _to, _amount, block.timestamp);
     }
-//submit Propsal 
+
     function submitProposal(
         uint8 _proposalType,
         address _owner,
-        uint256 _requiredSign
+        uint256 _requiredSign,
+        bool _pause
     ) external onlyOwner {
         if (_proposalType == 0) {
             uint256 _index = proposals.length;
@@ -251,12 +271,6 @@ contract MultiSig {
                 proposalType: ProposalType(_proposalType)
             });
             confirmedProposal[_index][msg.sender] = true;
-            emit submittedPropsal(
-                msg.sender,
-                _index,
-                block.timestamp,
-                ProposalType(_proposalType)
-            );
         } else if (_proposalType == 1) {
             uint256 _index = proposals.length;
             proposals.push(
@@ -289,15 +303,24 @@ contract MultiSig {
                 newRequiredSign: _requiredSign
             });
             confirmedProposal[_index][msg.sender] = true;
+        } else if (_proposalType == 3) {
+            uint256 _index = proposals.length;
+            proposals.push(
+                Proposal({
+                    submittedBy: msg.sender,
+                    proposalType: ProposalType(3),
+                    Index: _index,
+                    executed: false,
+                    confirmCount: 1
+                })
+            );
+            PauseMap[_index] = pauseUnpause({_pause: _pause});
+            confirmedProposal[_index][msg.sender] = true;
         }
     }
 
     // Approve transaction and Approve Proposals
-
-//Approve Ether/Erc20 Transaction
-    function approveTx(
-        uint256 _txIndex
-    )
+    function approveTx(uint256 _txIndex)
         external
         onlyOwner
         txExist(_txIndex)
@@ -319,7 +342,6 @@ contract MultiSig {
         emit Approved(msg.sender, transactions[_txIndex], block.timestamp);
     }
 
-//Approve proposal
     function approveProposal(uint256 _index) external onlyOwner {
         require(_index < proposals.length, "invalid index");
         require(!proposals[_index].executed, "Already executed");
@@ -335,8 +357,11 @@ contract MultiSig {
 
     // Execute transaction and Execute Proposals
 
-//Execute ETher/ERC20 transaction
-    function executeTx(uint256 _txIndex) internal notExecuted(_txIndex) {
+    function executeTx(uint256 _txIndex)
+        internal
+        notExecuted(_txIndex)
+        isPaused
+    {
         Transaction storage transaction = transactions[_txIndex];
 
         if (transaction._type == Type.Ether) {
@@ -354,7 +379,7 @@ contract MultiSig {
         }
         emit Executed(transaction.to, transaction, block.timestamp);
     }
-//execute Proposal
+
     function executeProposal(uint256 _index) internal onlyOwner {
         require(!proposals[_index].executed, "Already executed");
         require(
@@ -363,6 +388,8 @@ contract MultiSig {
         );
 
         if (proposals[_index].proposalType == ProposalType(0)) {
+            require(!paused, "Wallet is paused ");
+
             address ownerToRemove = OwnerMap[_index].owner;
             isOwner[ownerToRemove] = false;
             for (uint256 i; i < proposals.length; ++i) {
@@ -370,16 +397,20 @@ contract MultiSig {
             }
             proposals.pop();
 
-            emit removedOwner(_index, ownerToRemove, block.timestamp);
+            emit removedOwner(ownerToRemove, block.timestamp);
         } else if (proposals[_index].proposalType == ProposalType(1)) {
+            require(!paused, "Wallet is paused ");
             address ownerToAdd = OwnerMap[_index].owner;
             isOwner[ownerToAdd] = true;
             owners.push(ownerToAdd);
-            emit AddedOwner(_index, ownerToAdd, block.timestamp);
+            emit AddedOwner(ownerToAdd, block.timestamp);
         } else if (proposals[_index].proposalType == ProposalType(2)) {
+            require(!paused, "Wallet is paused ");
             uint256 policyToChange = PolicyMap[_index].newRequiredSign;
             requiredApproval = policyToChange;
-            emit changedPolicy(_index, policyToChange, block.timestamp);
+            emit changedPolicy(policyToChange, block.timestamp);
+        } else if (proposals[_index].proposalType == ProposalType(3)) {
+            paused = PauseMap[_index]._pause;
         }
     }
 
@@ -387,3 +418,4 @@ contract MultiSig {
         emit DepositedEther(msg.sender, msg.value, block.timestamp);
     }
 }
+
