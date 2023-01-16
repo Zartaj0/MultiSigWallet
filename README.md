@@ -3,7 +3,7 @@
 This project demonstrates a multisig wallet use case. 
 Multisig wallet refers to a joint wallet which requires individual signatures of the owners of the wallet.
 
-Checkout this factory contract - https://mumbai.polygonscan.com/address/0x413a7a8d985851e0656ecbc0b228a20f24ec9291#code
+Checkout this factory contract - https://mumbai.polygonscan.com/address/0x83b3c46a13512e692e656f9fcda81667f72bb95e
 
 Here you can pass an array of addresses that you want to make the owners of multisig wallet.
 Second argument is a uint which refers to the number of signatures required to perform any operation.
