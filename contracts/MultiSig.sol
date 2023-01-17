@@ -43,7 +43,7 @@ contract MultiSig {
 
     //state Variables
     uint256 public requiredApproval;
-    bool paused;
+    bool public paused;
     address[] owners;
     Transaction[] transactions;
     Proposal[] proposals;
@@ -53,8 +53,8 @@ contract MultiSig {
     mapping(uint256 => mapping(address => bool)) private confirmedTx;
     mapping(uint256 => mapping(address => bool)) private confirmedProposal;
     mapping(uint256 => OwnerProposal) internal OwnerMap;
-    mapping(uint256 => ChangeRequiredSign) internal PolicyMap;
-    mapping(uint256 => pauseUnpause) internal PauseMap;
+    mapping(uint256 => PolicyProposal) internal PolicyMap;
+    mapping(uint256 => PauseProposal) internal PauseMap;
     mapping(uint256 => address) internal TokenAddress;
 
     //enum
@@ -94,12 +94,12 @@ contract MultiSig {
         ProposalType proposalType;
     }
 
-    struct ChangeRequiredSign {
+    struct PolicyProposal {
         uint256 previousSignRequirement;
         uint256 newRequiredSign;
     }
 
-    struct pauseUnpause {
+    struct PauseProposal {
         bool _pause;
     }
 
@@ -172,7 +172,7 @@ contract MultiSig {
         return TokenAddress[_txIndex];
     }
 
-    function allproposals() external view returns (Proposal[] memory) {
+    function allProposals() external view returns (Proposal[] memory) {
         return proposals;
     }
 
@@ -180,6 +180,16 @@ contract MultiSig {
         uint256 _index
     ) external view returns (Proposal memory) {
         return proposals[_index];
+    }
+
+    function ownerProposalDetails(uint8 _index) external view returns(OwnerProposal memory){
+      return OwnerMap[_index];
+    }   
+    function policyProposalDetails(uint8 _index) external view returns(PolicyProposal memory){
+      return PolicyMap[_index];
+    }
+       function pauseProposalDetails(uint8 _index) external view returns(PauseProposal memory){
+      return PauseMap[_index];
     }
 
     function balanceEther() public view returns (uint) {
@@ -259,6 +269,7 @@ contract MultiSig {
     ) external onlyOwner {
         if (_proposalType == 0) {
             require(!paused, "Wallet is paused ");
+            require(isOwner[_owner], "This address is not an owner");
             uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
@@ -276,6 +287,7 @@ contract MultiSig {
             confirmedProposal[_index][msg.sender] = true;
         } else if (_proposalType == 1) {
             require(!paused, "Wallet is paused ");
+            require(_owner != address(0), "Zero address can't be owner");
             uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
@@ -293,6 +305,10 @@ contract MultiSig {
             confirmedProposal[_index][msg.sender] = true;
         } else if (_proposalType == 2) {
             require(!paused, "Wallet is paused ");
+            require(
+                _requiredSign > 1 && owners.length >= _requiredSign,
+                "inavlid policy input"
+            );
             uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
@@ -303,7 +319,7 @@ contract MultiSig {
                     confirmCount: 1
                 })
             );
-            PolicyMap[_index] = ChangeRequiredSign({
+            PolicyMap[_index] = PolicyProposal({
                 previousSignRequirement: requiredApproval,
                 newRequiredSign: _requiredSign
             });
@@ -319,7 +335,7 @@ contract MultiSig {
                     confirmCount: 1
                 })
             );
-            PauseMap[_index] = pauseUnpause({_pause: _pause});
+            PauseMap[_index] = PauseProposal({_pause: _pause});
             confirmedProposal[_index][msg.sender] = true;
         }
     }
@@ -409,7 +425,7 @@ contract MultiSig {
 
             address ownerToRemove = OwnerMap[_index].owner;
             isOwner[ownerToRemove] = false;
-            for (uint256 i; i < proposals.length; ++i) {
+            for (uint256 i; i < proposals.length - 1; ++i) {
                 proposals[i] = proposals[i + 1];
             }
             proposals.pop();
