@@ -15,8 +15,10 @@ describe.only("MultiSig", function () {
   let owners;
   let tokenAddress;
   let token;
+  const zeroaddress = "0x0000000000000000000000000000000000000000";
+
   beforeEach(async function () {
-    [owner, owner1, owner2, notOwner] = await ethers.getSigners();
+    [owner, owner1, owner2, notOwner, ownerToAdd] = await ethers.getSigners();
     owners = [owner, owner1, owner2];
 
     const MultiSig = await ethers.getContractFactory("MultiSig");
@@ -92,7 +94,7 @@ describe.only("MultiSig", function () {
 
   describe("Ether Transactions approval and execution", async function () {
 
-    this.beforeEach(async () => {
+    beforeEach(async () => {
 
       multiSig.connect(owner).submitEtherTx(notOwner.address, getEther("3"), 0x00);
 
@@ -140,8 +142,8 @@ describe.only("MultiSig", function () {
     })
     it("after getting required approval transaction should execute", async () => {
       await multiSig.approveTx(1)
-       console.log(await multiSig.singleTx(1));
-// expect(multiSig.singleTx(1).executed).to.be.true;
+      let arr = (await multiSig.singleTx(1));
+      expect(await arr.executed).to.be.true;
     })
     it("The recipient should get the tokens after execution", async () => {
       await multiSig.approveTx(1);
@@ -150,6 +152,112 @@ describe.only("MultiSig", function () {
       expect(await token.balanceOf(notOwner.address)).to.be.equal(200000)
     })
   })
+  describe("Submitting proposals", () => {
+    it("owner can submit valid proposal to revoke owner", async () => {
+      await expect(multiSig.submitProposal(0, zeroaddress, 0, 0x00)).to.be.revertedWith("This address is not an owner");
+      await expect(multiSig.submitProposal(0, owner1.address, 0, 0x00)).to.be.fulfilled;
+      let arr = await multiSig.allProposals();
+      console.log(await multiSig.paused());
+      expect(arr.length).to.be.equal(1);
+    })
 
+    it("owner can submit a valid proposal to add owner", async () => {
+      await expect(multiSig.submitProposal(1, ownerToAdd.address, 0, 0x00)).to.be.fulfilled;
+      await expect(multiSig.submitProposal(1, zeroaddress, 0, 0x00)).to.be.revertedWith("Zero address can't be owner");
+      let arr = await multiSig.allProposals();
+      expect(arr.length).to.be.equal(1);
+    })
+    it("owner can submit valid proposal to change policy", async () => {
+      await expect(multiSig.submitProposal(2, zeroaddress, 3, 0x00)).to.be.fulfilled;
+      await expect(multiSig.submitProposal(2, zeroaddress, 5, 0x00)).to.be.revertedWith("inavlid policy input");;
+      let arr = await multiSig.allProposals();
+      expect(arr.length).to.be.equal(1);
+    })
+    it("owner can submit valid proposal to pause contract", async () => {
+      await expect(multiSig.submitProposal(3, zeroaddress, 0, true)).to.be.fulfilled;
+      
+      let arr = await multiSig.allProposals();
+       expect(arr.length).to.be.equal(1);
+    })
+    it("nonowner can't submit proposal", async () => {
+      await expect(multiSig.connect(notOwner).submitProposal(3, zeroaddress, 3, 0x00)).to.be.revertedWith("you are not an owner");
+      let arr = await multiSig.allProposals();
+      expect(arr.length).to.be.equal(0);
+    })
+  })
+  describe("Approval And execution of revokeOwner proposals", () => {
+
+    beforeEach(async()=>{
+      await multiSig.submitProposal(0, owner2.address, 0, 0x00)
+    })
+    it("owners can approve  proposal to revoke owner and owner should be revoked", async () => {
+      console.log(await multiSig.ownerProposalDetails(0));
+      await expect( multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
+       expect(await multiSig.checkOwner(owner2.address)).to.be.false;
+    
+    })
+
+    it("revoked owner can't submit any proposal", async () => {
+
+    })
+    it("non-owner can't approve", async () => {
+      
+    })
+
+  })
+  describe("Approval And execution of addOwner proposals", () => {
+    it("owner can submit valid proposal to revoke owner", async () => {
+      
+    })
+
+    it("owner can submit a valid proposal to add owner", async () => {
+      
+    })
+    it("owner can submit valid proposal to change policy", async () => {
+      
+    })
+    it("owner can submit valid proposal to pause contract", async () => {
+      
+    })
+    it("nonowner can't submit proposal", async () => {
+      
+    })
+  })
+  describe("Approval And execution of changePolicy proposals", () => {
+    it("owner can submit valid proposal to revoke owner", async () => {
+     
+    })
+
+    it("owner can submit a valid proposal to add owner", async () => {
+                                
+    })
+    it("owner can submit valid proposal to change policy", async () => {
+      
+    })
+    it("owner can submit valid proposal to pause contract", async () => {
+      
+    })
+    it("nonowner can't submit proposal", async () => {
+      
+    })
+  })
+  describe("Approval And execution of pausing contrtact proposals", () => {
+    it("owner can submit valid proposal to revoke owner", async () => {
+     
+    })
+    
+    it("owner can submit a valid proposal to add owner", async () => {
+     
+    })
+    it("owner can submit valid proposal to change policy", async () => {
+      
+    })
+    it("owner can submit valid proposal to pause contract", async () => {
+     
+    })
+    it("nonowner can't submit proposal", async () => {
+      
+    })
+  })
 
 });
