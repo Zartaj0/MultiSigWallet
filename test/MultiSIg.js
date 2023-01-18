@@ -175,9 +175,9 @@ describe.only("MultiSig", function () {
     })
     it("owner can submit valid proposal to pause contract", async () => {
       await expect(multiSig.submitProposal(3, zeroaddress, 0, true)).to.be.fulfilled;
-      
+
       let arr = await multiSig.allProposals();
-       expect(arr.length).to.be.equal(1);
+      expect(arr.length).to.be.equal(1);
     })
     it("nonowner can't submit proposal", async () => {
       await expect(multiSig.connect(notOwner).submitProposal(3, zeroaddress, 3, 0x00)).to.be.revertedWith("you are not an owner");
@@ -187,76 +187,103 @@ describe.only("MultiSig", function () {
   })
   describe("Approval And execution of revokeOwner proposals", () => {
 
-    beforeEach(async()=>{
+    beforeEach(async () => {
       await multiSig.submitProposal(0, owner2.address, 0, 0x00)
     })
     it("owners can approve  proposal to revoke owner and owner should be revoked", async () => {
       console.log(await multiSig.ownerProposalDetails(0));
-      await expect( multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
-       expect(await multiSig.checkOwner(owner2.address)).to.be.false;
-    
+      await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
+      expect(await multiSig.checkOwner(owner2.address)).to.be.false;
+
     })
 
     it("revoked owner can't submit any proposal", async () => {
+      await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
+      await expect(multiSig.connect(owner2).submitProposal(0, owner.address, 0, 0)).to.be.revertedWith("you are not an owner")
+      await expect(multiSig.connect(owner2).submitEtherTx(notOwner.address, getEther("1"), 0)).to.be.revertedWith("you are not an owner")
+      await expect(multiSig.connect(owner2).submitERC20Tx(notOwner.address, tokenAddress, 1000, 0)).to.be.revertedWith("you are not an owner")
 
     })
     it("non-owner can't approve", async () => {
-      
+      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("you are not an owner");
+
     })
 
   })
   describe("Approval And execution of addOwner proposals", () => {
-    it("owner can submit valid proposal to revoke owner", async () => {
-      
+    beforeEach(async()=>{
+      await multiSig.submitProposal(1,ownerToAdd.address,0,0);
+    })
+    it("owner can approve the addowner proposal and newOwner should be added", async () => {
+      expect(await multiSig.checkOwner(ownerToAdd.address)).to.be.false;
+       
+      await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
+       expect(await multiSig.checkOwner(ownerToAdd.address)).to.be.true;
     })
 
-    it("owner can submit a valid proposal to add owner", async () => {
-      
+    it("new owner should get the privileges of owner", async () => {
+      await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
+      await expect(multiSig.connect(ownerToAdd).submitProposal(0, owner.address, 0, 0)).to.be.fulfilled
+      await expect(multiSig.connect(ownerToAdd).submitEtherTx(notOwner.address, getEther("1"), 0)).to.be.fulfilled
+      await expect(multiSig.connect(ownerToAdd).submitERC20Tx(notOwner.address, tokenAddress, 1000, 0)).to.be.fulfilled
     })
-    it("owner can submit valid proposal to change policy", async () => {
-      
+    it("non-owner can't approve the proposal", async () => {
+      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("you are not an owner");
+
     })
-    it("owner can submit valid proposal to pause contract", async () => {
-      
-    })
-    it("nonowner can't submit proposal", async () => {
-      
-    })
+   
   })
   describe("Approval And execution of changePolicy proposals", () => {
-    it("owner can submit valid proposal to revoke owner", async () => {
-     
+
+    beforeEach(async()=>{
+      await multiSig.submitProposal(2,ownerToAdd.address,3,0);
+    })
+    it("owner can approve the policy change proposal and policy should be changed", async () => {
+      expect(await multiSig.requiredApproval()).to.be.equal(2)
+       
+      await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
+      expect(await multiSig.requiredApproval()).to.be.equal(3)
     })
 
-    it("owner can submit a valid proposal to add owner", async () => {
-                                
+
+    it("non-owner can't approve the proposal", async () => {
+      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("you are not an owner");
+
     })
-    it("owner can submit valid proposal to change policy", async () => {
-      
-    })
-    it("owner can submit valid proposal to pause contract", async () => {
-      
-    })
-    it("nonowner can't submit proposal", async () => {
-      
-    })
+   
   })
   describe("Approval And execution of pausing contrtact proposals", () => {
-    it("owner can submit valid proposal to revoke owner", async () => {
-     
+    beforeEach(async()=>{
+      await multiSig.submitProposal(3,zeroaddress,0,true);
     })
-    
-    it("owner can submit a valid proposal to add owner", async () => {
-     
+    it("owner can approve the policy change proposal and policy should be changed", async () => {
+      expect(await multiSig.paused()).to.be.false;
+       
+      await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
+      expect(await multiSig.paused()).to.be.true;
     })
-    it("owner can submit valid proposal to change policy", async () => {
-      
+
+
+    it("non-owner can't approve the proposal", async () => {
+      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("you are not an owner");
+
     })
-    it("owner can submit valid proposal to pause contract", async () => {
-     
+  })
+
+  describe("no function should run after the contract is paused",async()=>{
+    beforeEach(async ()=>{
+      await multiSig.submitProposal(3,zeroaddress,0,true);
+      await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
     })
-    it("nonowner can't submit proposal", async () => {
-      
+
+    it("submit functions should revert",async()=>{
+      await expect(multiSig.submitERC20Tx(notOwner.address, tokenAddress, 100000, 0x00)).to.be.revertedWith("wallet is paused");
+      await expect(multiSig.connect(owner).submitEtherTx(notOwner.address, getEther("2"), 0x00)).to.be.revertedWith("wallet is paused");
+      await expect(multiSig.submitProposal(0, owner1.address, 0, 0x00)).to.be.revertedWith("wallet is paused");
+      await expect(multiSig.submitProposal(1, ownerToAdd.address, 0, 0x00)).to.be.revertedWith("wallet is paused");
+      await expect(multiSig.submitProposal(2, zeroaddress, 3, 0x00)).to.be.revertedWith("wallet is paused");
+      await expect(multiSig.submitProposal(3, zeroaddress, 0, false)).to.be.fulfilled;
+
     })
   })
 

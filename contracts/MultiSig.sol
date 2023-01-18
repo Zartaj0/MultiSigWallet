@@ -123,7 +123,7 @@ contract MultiSig {
     }
 
     modifier isPaused() {
-        require(!paused, "Wallet is paused ");
+        require(!paused, "wallet is paused");
         _;
     }
 
@@ -268,7 +268,7 @@ contract MultiSig {
         bool _pause
     ) external onlyOwner {
         if (_proposalType == 0) {
-            require(!paused, "Wallet is paused ");
+            require(!paused, "wallet is paused");
             require(isOwner[_owner], "This address is not an owner");
             uint256 _index = proposals.length;
             proposals.push(
@@ -286,7 +286,7 @@ contract MultiSig {
             });
             confirmedProposal[_index][msg.sender] = true;
         } else if (_proposalType == 1) {
-            require(!paused, "Wallet is paused ");
+            require(!paused, "wallet is paused");
             require(_owner != address(0), "Zero address can't be owner");
             uint256 _index = proposals.length;
             proposals.push(
@@ -304,7 +304,7 @@ contract MultiSig {
             });
             confirmedProposal[_index][msg.sender] = true;
         } else if (_proposalType == 2) {
-            require(!paused, "Wallet is paused ");
+            require(!paused, "wallet is paused");
             require(
                 _requiredSign > 1 && owners.length >= _requiredSign,
                 "inavlid policy input"
@@ -372,7 +372,7 @@ contract MultiSig {
         require(!confirmedProposal[_index][msg.sender], "Already approved");
 
         if (proposals[_index].proposalType != ProposalType.pause) {
-            require(!paused, "Wallet is paused ");
+            require(!paused, "wallet is paused");
 
             confirmedProposal[_index][msg.sender] = true;
             proposals[_index].confirmCount += 1;
@@ -421,7 +421,7 @@ contract MultiSig {
         );
 
         if (proposals[_index].proposalType == ProposalType(0)) {
-            require(!paused, "Wallet is paused ");
+            require(!paused, "wallet is paused");
 
             address ownerToRemove = OwnerMap[_index].owner;
             isOwner[ownerToRemove] = false;
@@ -432,13 +432,13 @@ contract MultiSig {
 
             emit removedOwner(ownerToRemove, block.timestamp);
         } else if (proposals[_index].proposalType == ProposalType(1)) {
-            require(!paused, "Wallet is paused ");
+            require(!paused, "wallet is paused");
             address ownerToAdd = OwnerMap[_index].owner;
             isOwner[ownerToAdd] = true;
             owners.push(ownerToAdd);
             emit AddedOwner(ownerToAdd, block.timestamp);
         } else if (proposals[_index].proposalType == ProposalType(2)) {
-            require(!paused, "Wallet is paused ");
+            require(!paused, "wallet is paused");
             uint256 policyToChange = PolicyMap[_index].newRequiredSign;
             requiredApproval = policyToChange;
             emit changedPolicy(policyToChange, block.timestamp);
