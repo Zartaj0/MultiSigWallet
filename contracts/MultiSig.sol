@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-interface IERC20{
-    function transfer(address to,uint amount)external returns(bool);
-    function balanceOf(address owner) external view returns(uint);
+
+interface IERC20 {
+    function transfer(address to, uint amount) external returns (bool);
+
+    function balanceOf(address owner) external view returns (uint);
 }
+
 // import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Multisig
@@ -45,6 +48,7 @@ contract MultiSig {
     event ChangedPolicy(uint256 newPolicy, uint256 timestamp);
 
     //state Variables
+    //uint256 i;
     uint256 public requiredApproval;
     bool public paused;
     address[] owners;
@@ -137,7 +141,7 @@ contract MultiSig {
             _owners.length >= _required && _required > 1,
             "Invalid require input"
         );
-        for (     uint256 i = 0; i < _owners.length; i++) {
+        for (uint i = 0; i < _owners.length; i++) {
             address owner = _owners[i];
 
             require(owner != address(0), "invalid address");
@@ -184,8 +188,6 @@ contract MultiSig {
     ) external view returns (Proposal memory) {
         return proposals[_index];
     }
-
-  
 
     function balanceEther() public view returns (uint) {
         return address(this).balance;
@@ -262,7 +264,7 @@ contract MultiSig {
         uint256 _requiredSign,
         bool _pause
     ) external onlyOwner {
-            uint256 _index = proposals.length;
+        uint256 _index = proposals.length;
 
         if (_proposalType == 0) {
             require(!paused, "wallet is paused");
@@ -401,8 +403,11 @@ contract MultiSig {
             address token = TokenAddress[_txIndex];
             transaction.executed = true;
 
-        /*    bool succes =*/ IERC20(token).transfer(transaction.to, transaction.amount);
-        // require(succes,"transafer fail");
+            bool succes = IERC20(token).transfer(
+                transaction.to,
+                transaction.amount
+            );
+            require(succes, "transafer fail");
         }
         emit Executed(transaction.to, transaction, block.timestamp);
     }
@@ -419,7 +424,7 @@ contract MultiSig {
 
             address ownerToRemove = OwnerMap[_index].owner;
             isOwner[ownerToRemove] = false;
-            for (  uint i; i < proposals.length - 1; ++i) {
+            for (uint i; i < proposals.length - 1; ++i) {
                 proposals[i] = proposals[i + 1];
             }
             proposals.pop();
