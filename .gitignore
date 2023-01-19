@@ -13,3 +13,4 @@ contracts_MultiSig_sol_MultiSig.abi
 cache
 artifacts
 
+slither.db.json
