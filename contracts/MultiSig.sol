@@ -52,17 +52,18 @@ contract MultiSig {
     uint256 public requiredApproval;
     bool public paused;
     address[] owners;
-    Transaction[] transactions;
-    Proposal[] proposals;
+    Transaction[] public transactions;
+    Proposal[] public proposals;
 
     //mapppings
-    mapping(address => bool) internal isOwner;
-    mapping(uint256 => mapping(address => bool)) internal confirmedTx;
-    mapping(uint256 => mapping(address => bool)) internal confirmedProposal;
+    mapping(address => bool) private isOwner;
+    mapping(address => uint) private ownerIndex;
+    mapping(uint256 => mapping(address => bool)) private confirmedTx;
+    mapping(uint256 => mapping(address => bool)) private confirmedProposal;
     mapping(uint256 => OwnerProposal) public OwnerMap;
     mapping(uint256 => PolicyProposal) public PolicyMap;
     mapping(uint256 => PauseProposal) public PauseMap;
-    mapping(uint256 => address) internal TokenAddress;
+    mapping(uint256 => address) public TokenAddress;
 
     //enum
     enum Type {
@@ -81,7 +82,6 @@ contract MultiSig {
         address submittedBy;
         address to;
         uint256 amount;
-        bytes data;
         uint256 txIndex;
         bool executed;
         uint256 confirmCount;
@@ -135,13 +135,13 @@ contract MultiSig {
     }
 
     //constructor
-    constructor(address[] memory _owners, uint256 _required) {
+    constructor(address[] memory  _owners, uint256 _required) {
         require(_owners.length > 1, "must be mmore than 1 owner");
         require(
             _owners.length >= _required && _required > 1,
             "Invalid require input"
         );
-        for (uint i = 0; i < _owners.length; i++) {
+        for (uint i = 0; i < _owners.length; ) {
             address owner = _owners[i];
 
             require(owner != address(0), "invalid address");
@@ -149,6 +149,10 @@ contract MultiSig {
 
             isOwner[owner] = true;
             owners.push(owner);
+            ownerIndex[owner] = i;
+            unchecked {
+                ++i;
+            }
         }
 
         requiredApproval = _required;
@@ -156,37 +160,19 @@ contract MultiSig {
 
     //view functions
     function showOwners() external view returns (address[] memory) {
-        return owners;
+        return  owners;
     }
 
     function allTxs() external view returns (Transaction[] memory) {
         return transactions;
     }
 
-    function singleTx(
-        uint256 _index
-    ) external view returns (Transaction memory transaction) {
-        return (transactions[_index]);
-    }
-
     function balanceErc20(address Erc20) public view returns (uint256) {
         return IERC20(Erc20).balanceOf(address(this));
     }
 
-    function TokenAddressForSubmittedTx(
-        uint256 _txIndex
-    ) external view returns (address) {
-        return TokenAddress[_txIndex];
-    }
-
     function allProposals() external view returns (Proposal[] memory) {
         return proposals;
-    }
-
-    function singleProposal(
-        uint256 _index
-    ) external view returns (Proposal memory) {
-        return proposals[_index];
     }
 
     function balanceEther() public view returns (uint) {
@@ -204,8 +190,7 @@ contract MultiSig {
     function submitERC20Tx(
         address _to,
         address ERC20,
-        uint256 _amount,
-        bytes memory _data
+        uint256 _amount
     ) external onlyOwner isPaused {
         uint256 balance = balanceErc20(ERC20);
 
@@ -219,7 +204,6 @@ contract MultiSig {
                 submittedBy: msg.sender,
                 to: _to,
                 amount: _amount,
-                data: _data,
                 txIndex: _txIndex,
                 executed: false,
                 confirmCount: 1,
@@ -234,8 +218,7 @@ contract MultiSig {
 
     function submitEtherTx(
         address _to,
-        uint256 _amount,
-        bytes calldata _data
+        uint256 _amount
     ) external onlyOwner isPaused {
         require(_amount < balanceEther(), "Not enough balance");
         uint256 _txIndex = transactions.length;
@@ -247,7 +230,6 @@ contract MultiSig {
                 submittedBy: msg.sender,
                 to: _to,
                 amount: _amount,
-                data: _data,
                 txIndex: _txIndex,
                 executed: false,
                 confirmCount: 1,
@@ -419,29 +401,35 @@ contract MultiSig {
             "Not approved by everyone"
         );
 
-        if (proposals[_index].proposalType == ProposalType(0)) {
+        ProposalType _propsalType = proposals[_index].proposalType;
+
+        if (_propsalType == ProposalType(0)) {
             require(!paused, "wallet is paused");
 
             address ownerToRemove = OwnerMap[_index].owner;
             isOwner[ownerToRemove] = false;
-            for (uint i; i < proposals.length - 1; ++i) {
-                proposals[i] = proposals[i + 1];
+            uint _i = ownerIndex[ownerToRemove];
+            for (uint i = _i; i < owners.length - 1; ) {
+                owners[i] = owners[i + 1];
+                unchecked {
+                    ++i;
+                }
             }
-            proposals.pop();
+            owners.pop();
 
             emit RemovedOwner(ownerToRemove, block.timestamp);
-        } else if (proposals[_index].proposalType == ProposalType(1)) {
+        } else if (_propsalType == ProposalType(1)) {
             require(!paused, "wallet is paused");
             address ownerToAdd = OwnerMap[_index].owner;
             isOwner[ownerToAdd] = true;
             owners.push(ownerToAdd);
             emit AddedOwner(ownerToAdd, block.timestamp);
-        } else if (proposals[_index].proposalType == ProposalType(2)) {
+        } else if (_propsalType == ProposalType(2)) {
             require(!paused, "wallet is paused");
             uint256 policyToChange = PolicyMap[_index].newRequiredSign;
             requiredApproval = policyToChange;
             emit ChangedPolicy(policyToChange, block.timestamp);
-        } else if (proposals[_index].proposalType == ProposalType(3)) {
+        } else if (_propsalType == ProposalType(3)) {
             paused = PauseMap[_index]._pause;
         }
     }
