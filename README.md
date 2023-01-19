@@ -19,6 +19,7 @@ For this you need to submit a proposal by passing three parameters:
 1. Uint Proposal type : 0 to remove an owner, 1 to add an owner, 2 to change the number of sgnatures required,3 to pause or unpause the contract.
 2. address owner : only pass an address if you select 0 or 1 proposal type otherwise you can pass the zero address.
 3. uint requireSign: pass the number of signatures you want to update. If you don't want to update it just pass anything it won't matter cause the function only reads it   when you have selected the proposal type 2.
+4. bool paused: You have to pass a boolean here to pause/unpause the contract. Pass true to pause the contract, pass false to unpause it. Pausing the contract means everything will be paused i.e. submitting transactions/approvals/ executoins.
 
 ### remember you don't need to worry about all the arguments, you just need to pass the correct argument for what kind of proposal you have selected. The other ones will not be read by the function so you can pass zero to them
 
