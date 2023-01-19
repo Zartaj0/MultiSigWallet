@@ -4,7 +4,7 @@
 /// @author Zartaj Afser
 /// @notice This is the standard interface for an ERC20 token
 
-pragma solidity ^0.8.16;
+pragma solidity ^0.8.0;
 
 interface  IERC20 {
     function allowance(address tokenOwner, address spender) external  view returns (uint remaining);
@@ -27,11 +27,13 @@ interface  IERC20 {
 
 contract Token is IERC20  {
 
-    address public  owner;
-    string public name;
-    string public symbol;
-    uint8 public decimals; 
-    uint public maximumSupply;
+    address public  immutable owner;
+    string public constant name = "Test";
+
+    string public constant symbol = "TST";
+
+    uint8 public immutable  decimals; 
+    uint public immutable maximumSupply;
                                  
     mapping(address => uint) private balances;
     mapping(address => mapping(address => uint)) private  allowed;
@@ -40,10 +42,8 @@ contract Token is IERC20  {
 
 /// @dev Total supply is 10 Million and the tokens are being credit to the owner's address
     constructor()  {
-        name = "Test";
-        symbol = "TST";
         decimals = 18;
-        maximumSupply = 10000000 * 10**18;
+        maximumSupply = 10 **7 * 10**18;
         owner= msg.sender;
             
         balances[owner] = maximumSupply;
