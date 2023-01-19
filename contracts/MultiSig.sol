@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+interface InetrfaceERC20{
+    function transfer(address to,uint amount)external returns(bool);
+    function balanceOf(address owner) external view returns(uint);
+}
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Multisig
 /// @author Zartaj
@@ -38,10 +42,11 @@ contract MultiSig {
     );
     event Executed(address to, Transaction transaction, uint256 timestamp);
     event AddedOwner(address newOwner, uint256 timestamp);
-    event removedOwner(address wasOwner, uint256 timestamp);
-    event changedPolicy(uint256 newPolicy, uint256 timestamp);
+    event RemovedOwner(address wasOwner, uint256 timestamp);
+    event ChangedPolicy(uint256 newPolicy, uint256 timestamp);
 
     //state Variables
+    uint256 i;
     uint256 public requiredApproval;
     bool public paused;
     address[] owners;
@@ -134,7 +139,7 @@ contract MultiSig {
             _owners.length >= _required && _required > 1,
             "Invalid require input"
         );
-        for (uint256 i = 0; i < _owners.length; i++) {
+        for ( i = 0; i < _owners.length; i++) {
             address owner = _owners[i];
 
             require(owner != address(0), "invalid address");
@@ -162,11 +167,11 @@ contract MultiSig {
         return (transactions[_index]);
     }
 
-    function balanceErc20(address ERC20) public view returns (uint256) {
-        return IERC20(ERC20).balanceOf(address(this));
+    function balanceErc20(address Erc20) public view returns (uint256) {
+        return InetrfaceERC20(Erc20).balanceOf(address(this));
     }
 
-    function TokenAddressForsubmittedTx(
+    function TokenAddressForSubmittedTx(
         uint256 _txIndex
     ) external view returns (address) {
         return TokenAddress[_txIndex];
@@ -267,10 +272,11 @@ contract MultiSig {
         uint256 _requiredSign,
         bool _pause
     ) external onlyOwner {
+            uint256 _index = proposals.length;
+
         if (_proposalType == 0) {
             require(!paused, "wallet is paused");
             require(isOwner[_owner], "This address is not an owner");
-            uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
                     submittedBy: msg.sender,
@@ -288,7 +294,6 @@ contract MultiSig {
         } else if (_proposalType == 1) {
             require(!paused, "wallet is paused");
             require(_owner != address(0), "Zero address can't be owner");
-            uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
                     submittedBy: msg.sender,
@@ -309,7 +314,6 @@ contract MultiSig {
                 _requiredSign > 1 && owners.length >= _requiredSign,
                 "inavlid policy input"
             );
-            uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
                     submittedBy: msg.sender,
@@ -325,7 +329,6 @@ contract MultiSig {
             });
             confirmedProposal[_index][msg.sender] = true;
         } else if (_proposalType == 3) {
-            uint256 _index = proposals.length;
             proposals.push(
                 Proposal({
                     submittedBy: msg.sender,
@@ -408,7 +411,8 @@ contract MultiSig {
             address token = TokenAddress[_txIndex];
             transaction.executed = true;
 
-            IERC20(token).transfer(transaction.to, transaction.amount);
+           bool succes = InetrfaceERC20(token).transfer(transaction.to, transaction.amount);
+        require(succes,"transafer fail");
         }
         emit Executed(transaction.to, transaction, block.timestamp);
     }
@@ -425,12 +429,12 @@ contract MultiSig {
 
             address ownerToRemove = OwnerMap[_index].owner;
             isOwner[ownerToRemove] = false;
-            for (uint256 i; i < proposals.length - 1; ++i) {
+            for (  i; i < proposals.length - 1; ++i) {
                 proposals[i] = proposals[i + 1];
             }
             proposals.pop();
 
-            emit removedOwner(ownerToRemove, block.timestamp);
+            emit RemovedOwner(ownerToRemove, block.timestamp);
         } else if (proposals[_index].proposalType == ProposalType(1)) {
             require(!paused, "wallet is paused");
             address ownerToAdd = OwnerMap[_index].owner;
@@ -441,7 +445,7 @@ contract MultiSig {
             require(!paused, "wallet is paused");
             uint256 policyToChange = PolicyMap[_index].newRequiredSign;
             requiredApproval = policyToChange;
-            emit changedPolicy(policyToChange, block.timestamp);
+            emit ChangedPolicy(policyToChange, block.timestamp);
         } else if (proposals[_index].proposalType == ProposalType(3)) {
             paused = PauseMap[_index]._pause;
         }
