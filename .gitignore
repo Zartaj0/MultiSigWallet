@@ -6,8 +6,11 @@ typechain
 typechain-types
 package-lock.json
 flatten.sol
-
+contracts_Factory_sol_ZarFactory.abi
+contracts_MultiSig_sol_IERC20.abi
+contracts_MultiSig_sol_MultiSig.abi
 #Hardhat files
 cache
 artifacts
 
+slither.db.json
