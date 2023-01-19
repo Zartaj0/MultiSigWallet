@@ -191,7 +191,7 @@ describe.only("MultiSig", function () {
       await multiSig.submitProposal(0, owner2.address, 0, 0x00)
     })
     it("owners can approve  proposal to revoke owner and owner should be revoked", async () => {
-      console.log(await multiSig.ownerProposalDetails(0));
+      console.log(await multiSig.OwnerMap(0));
       await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
       expect(await multiSig.checkOwner(owner2.address)).to.be.false;
 

@@ -52,12 +52,12 @@ contract MultiSig {
     Proposal[] proposals;
 
     //mapppings
-    mapping(address => bool) private isOwner;
-    mapping(uint256 => mapping(address => bool)) private confirmedTx;
-    mapping(uint256 => mapping(address => bool)) private confirmedProposal;
-    mapping(uint256 => OwnerProposal) internal OwnerMap;
-    mapping(uint256 => PolicyProposal) internal PolicyMap;
-    mapping(uint256 => PauseProposal) internal PauseMap;
+    mapping(address => bool) internal isOwner;
+    mapping(uint256 => mapping(address => bool)) internal confirmedTx;
+    mapping(uint256 => mapping(address => bool)) internal confirmedProposal;
+    mapping(uint256 => OwnerProposal) public OwnerMap;
+    mapping(uint256 => PolicyProposal) public PolicyMap;
+    mapping(uint256 => PauseProposal) public PauseMap;
     mapping(uint256 => address) internal TokenAddress;
 
     //enum
@@ -185,15 +185,7 @@ contract MultiSig {
         return proposals[_index];
     }
 
-    function ownerProposalDetails(uint8 _index) external view returns(OwnerProposal memory){
-      return OwnerMap[_index];
-    }   
-    function policyProposalDetails(uint8 _index) external view returns(PolicyProposal memory){
-      return PolicyMap[_index];
-    }
-       function pauseProposalDetails(uint8 _index) external view returns(PauseProposal memory){
-      return PauseMap[_index];
-    }
+  
 
     function balanceEther() public view returns (uint) {
         return address(this).balance;

@@ -1,15 +1,16 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 require("@nomiclabs/hardhat-etherscan");
+require("hardhat-contract-sizer");
 
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.16",
   settings: {
-    optimizer: {
+    Optimizer: {
       enabled: true,
-      runs: 1000,
+      runs: 0,
     },
   },
   networks:{
