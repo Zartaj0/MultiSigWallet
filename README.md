@@ -26,4 +26,4 @@ For this you need to submit a proposal by passing three parameters:
 After submitting this proposal you will get an index in the emitted event.
 And later on the other owner can see what the propposal is about with that index and then approve it.
 When the last approval is given, the approve function automatically calls the execute function.
-image.png
+![image](https://user-images.githubusercontent.com/91191500/213485262-3e3f53d7-f1b0-4b29-b388-626aedd62414.png)
