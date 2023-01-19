@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-interface InetrfaceERC20{
+interface IERC20{
     function transfer(address to,uint amount)external returns(bool);
     function balanceOf(address owner) external view returns(uint);
 }
-
-//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Multisig
 /// @author Zartaj
@@ -46,7 +45,6 @@ contract MultiSig {
     event ChangedPolicy(uint256 newPolicy, uint256 timestamp);
 
     //state Variables
-    uint256 i;
     uint256 public requiredApproval;
     bool public paused;
     address[] owners;
@@ -139,7 +137,7 @@ contract MultiSig {
             _owners.length >= _required && _required > 1,
             "Invalid require input"
         );
-        for ( i = 0; i < _owners.length; i++) {
+        for (     uint256 i = 0; i < _owners.length; i++) {
             address owner = _owners[i];
 
             require(owner != address(0), "invalid address");
@@ -168,7 +166,7 @@ contract MultiSig {
     }
 
     function balanceErc20(address Erc20) public view returns (uint256) {
-        return InetrfaceERC20(Erc20).balanceOf(address(this));
+        return IERC20(Erc20).balanceOf(address(this));
     }
 
     function TokenAddressForSubmittedTx(
@@ -411,8 +409,8 @@ contract MultiSig {
             address token = TokenAddress[_txIndex];
             transaction.executed = true;
 
-           bool succes = InetrfaceERC20(token).transfer(transaction.to, transaction.amount);
-        require(succes,"transafer fail");
+        /*    bool succes =*/ IERC20(token).transfer(transaction.to, transaction.amount);
+        // require(succes,"transafer fail");
         }
         emit Executed(transaction.to, transaction, block.timestamp);
     }
@@ -429,7 +427,7 @@ contract MultiSig {
 
             address ownerToRemove = OwnerMap[_index].owner;
             isOwner[ownerToRemove] = false;
-            for (  i; i < proposals.length - 1; ++i) {
+            for (  uint i; i < proposals.length - 1; ++i) {
                 proposals[i] = proposals[i + 1];
             }
             proposals.pop();
