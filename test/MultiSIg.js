@@ -48,7 +48,7 @@ describe.only("MultiSig", function () {
       expect(array.length).to.be.equal(2);
     })
     it("non-Owner is not able to submit transaction", async () => {
-      await expect(multiSig.connect(notOwner).submitERC20Tx(notOwner.address, tokenAddress, 100000)).to.be.revertedWith("you are not an owner")
+      await expect(multiSig.connect(notOwner).submitERC20Tx(notOwner.address, tokenAddress, 100000)).to.be.revertedWith("Not owner")
     })
 
     it("should mark all the owners as true in the mapping", async () => {
@@ -109,7 +109,7 @@ describe.only("MultiSig", function () {
 
     });
     it("non-owner should not be able to approve transaction", async function () {
-      await expect(multiSig.connect(notOwner).approveTx(0)).to.be.revertedWith("you are not an owner");
+      await expect(multiSig.connect(notOwner).approveTx(0)).to.be.revertedWith("Not owner");
 
     });
     it("recipient should get the ether after transaction is approved", async function () {
@@ -138,7 +138,7 @@ describe.only("MultiSig", function () {
 
     })
     it("non-owner should not be able to approve the transaction", async () => {
-      await expect(multiSig.connect(notOwner).approveTx(0)).to.be.revertedWith("you are not an owner");
+      await expect(multiSig.connect(notOwner).approveTx(0)).to.be.revertedWith("Not owner");
     })
     it("after getting required approval transaction should execute", async () => {
       await multiSig.approveTx(1)
@@ -180,7 +180,7 @@ describe.only("MultiSig", function () {
       expect(arr.length).to.be.equal(1);
     })
     it("nonowner can't submit proposal", async () => {
-      await expect(multiSig.connect(notOwner).submitProposal(3, zeroaddress, 3,true)).to.be.revertedWith("you are not an owner");
+      await expect(multiSig.connect(notOwner).submitProposal(3, zeroaddress, 3,true)).to.be.revertedWith("Not owner");
       let arr = await multiSig.allProposals();
       expect(arr.length).to.be.equal(0);
     })
@@ -200,13 +200,13 @@ describe.only("MultiSig", function () {
     it("revoked owner can't submit any proposal", async () => {
       await expect(multiSig.connect(owner1).approveProposal(0)).to.be.fulfilled;
       console.log(await multiSig.showOwners());
-      await expect(multiSig.connect(owner2).submitProposal(0, owner.address, 0, 0)).to.be.revertedWith("you are not an owner")
-      await expect(multiSig.connect(owner2).submitEtherTx(notOwner.address, getEther("1"))).to.be.revertedWith("you are not an owner")
-      await expect(multiSig.connect(owner2).submitERC20Tx(notOwner.address, tokenAddress, 1000)).to.be.revertedWith("you are not an owner")
+      await expect(multiSig.connect(owner2).submitProposal(0, owner.address, 0, 0)).to.be.revertedWith("Not owner")
+      await expect(multiSig.connect(owner2).submitEtherTx(notOwner.address, getEther("1"))).to.be.revertedWith("Not owner")
+      await expect(multiSig.connect(owner2).submitERC20Tx(notOwner.address, tokenAddress, 1000)).to.be.revertedWith("Not owner")
 
     })
     it("non-owner can't approve", async () => {
-      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("you are not an owner");
+      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("Not owner");
 
     })
 
@@ -229,7 +229,7 @@ describe.only("MultiSig", function () {
       await expect(multiSig.connect(ownerToAdd).submitERC20Tx(notOwner.address, tokenAddress, 1000)).to.be.fulfilled
     })
     it("non-owner can't approve the proposal", async () => {
-      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("you are not an owner");
+      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("Not owner");
 
     })
    
@@ -248,7 +248,7 @@ describe.only("MultiSig", function () {
 
 
     it("non-owner can't approve the proposal", async () => {
-      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("you are not an owner");
+      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("Not owner");
 
     })
    
@@ -266,7 +266,7 @@ describe.only("MultiSig", function () {
 
 
     it("non-owner can't approve the proposal", async () => {
-      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("you are not an owner");
+      await expect(multiSig.connect(notOwner).approveProposal(0)).to.be.revertedWith("Not owner");
 
     })
   })
