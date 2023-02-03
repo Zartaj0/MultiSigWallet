@@ -112,12 +112,18 @@ contract MultiSig {
 
     //modifiers
     modifier onlyOwner() {
-        require(isOwner[msg.sender], "you are not an owner");
+        if(!isOwner[msg.sender]){
+            revert("Not owner");
+        }
+        // require(isOwner[msg.sender], "you are not an owner");
         _;
     }
 
     modifier txExist(uint256 _txIndex) {
-        require(_txIndex < transactions.length, "transaction doesn't exist");
+        if(_txIndex >= transactions.length){
+            revert();
+        }
+        // require(_txIndex < transactions.length, "transaction doesn't exist");
         _;
     }
     modifier notExecuted(uint256 _txIndex) {
@@ -135,32 +141,32 @@ contract MultiSig {
     }
 
     //constructor
-    constructor(address[] memory  _owners, uint256 _required) {
+    constructor(address[] memory _owners, uint256 _required) {
         require(_owners.length > 1, "must be mmore than 1 owner");
         require(
             _owners.length >= _required && _required > 1,
             "Invalid require input"
         );
-        for (uint i = 0; i < _owners.length; ) {
-            address owner = _owners[i];
+        unchecked {
+            for (uint i = 0; i < _owners.length; ) {
+                address owner = _owners[i];
 
-            require(owner != address(0), "invalid address");
-            require(!isOwner[owner], "Owner is already added");
+                require(owner != address(0), "invalid address");
+                require(!isOwner[owner], "Owner is already added");
 
-            isOwner[owner] = true;
-            owners.push(owner);
-            ownerIndex[owner] = i;
-            unchecked {
+                isOwner[owner] = true;
+                owners.push(owner);
+                ownerIndex[owner] = i;
+
                 ++i;
             }
         }
-
         requiredApproval = _required;
     }
 
     //view functions
     function showOwners() external view returns (address[] memory) {
-        return  owners;
+        return owners;
     }
 
     function allTxs() external view returns (Transaction[] memory) {
@@ -331,7 +337,9 @@ contract MultiSig {
         Transaction storage transaction = transactions[_txIndex];
 
         confirmedTx[_txIndex][msg.sender] = true;
-        transaction.confirmCount += 1;
+        unchecked {
+            transaction.confirmCount += 1;
+        }
         if (transaction.confirmCount == requiredApproval) {
             if (
                 transaction._type == Type.ERC20 ||
@@ -352,15 +360,17 @@ contract MultiSig {
             require(!paused, "wallet is paused");
 
             confirmedProposal[_index][msg.sender] = true;
+            // unchecked { //Using more gas
             proposals[_index].confirmCount += 1;
-
+            // }
             if (proposals[_index].confirmCount == requiredApproval) {
                 executeProposal(_index);
             }
         } else {
             confirmedProposal[_index][msg.sender] = true;
-            proposals[_index].confirmCount += 1;
-
+            // unchecked { //Using more gas 
+                proposals[_index].confirmCount += 1;
+            // }
             if (proposals[_index].confirmCount == requiredApproval) {
                 executeProposal(_index);
             }
@@ -409,9 +419,9 @@ contract MultiSig {
             address ownerToRemove = OwnerMap[_index].owner;
             isOwner[ownerToRemove] = false;
             uint _i = ownerIndex[ownerToRemove];
-            for (uint i = _i; i < owners.length - 1; ) {
-                owners[i] = owners[i + 1];
-                unchecked {
+            unchecked {
+                for (uint i = _i; i < owners.length - 1; ) {
+                    owners[i] = owners[i + 1];
                     ++i;
                 }
             }
