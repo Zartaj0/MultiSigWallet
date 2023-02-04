@@ -182,14 +182,22 @@ contract MultiSig {
         return proposals[_index];
     }
 
-    function ownerProposalDetails(uint8 _index) external view returns(OwnerProposal memory){
-      return OwnerMap[_index];
-    }   
-    function policyProposalDetails(uint8 _index) external view returns(PolicyProposal memory){
-      return PolicyMap[_index];
+    function ownerProposalDetails(
+        uint8 _index
+    ) external view returns (OwnerProposal memory) {
+        return OwnerMap[_index];
     }
-       function pauseProposalDetails(uint8 _index) external view returns(PauseProposal memory){
-      return PauseMap[_index];
+
+    function policyProposalDetails(
+        uint8 _index
+    ) external view returns (PolicyProposal memory) {
+        return PolicyMap[_index];
+    }
+
+    function pauseProposalDetails(
+        uint8 _index
+    ) external view returns (PauseProposal memory) {
+        return PauseMap[_index];
     }
 
     function balanceEther() public view returns (uint) {
