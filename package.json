@@ -1,11 +1,14 @@
 {
   "name": "hardhat-project",
   "dependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "@openzeppelin/contracts": "^4.8.0",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "solc": "^0.8.17"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-etherscan": "^3.1.5"
+    "@nomiclabs/hardhat-etherscan": "^3.1.5",
+    "hardhat-contract-sizer": "^2.7.0",
+    "hardhat-gas-reporter": "^1.0.9"
   }
 }
