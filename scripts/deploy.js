@@ -14,7 +14,7 @@ async function main() {
 
   // await multisig.deployed();
 
-  const Factory = await hre.ethers.getContractFactory("ZarFactory");
+  const Factory = await hre.ethers.getContractFactory("Factory");
   const factory = await Factory.deploy();
 
   await factory.deployed();
@@ -22,6 +22,13 @@ async function main() {
  
 
   console.log(`Factory deployed ${factory.address}`);
+  await factory.deployTransaction.wait(5);
+
+  await hre.run("verify:verify", {
+    address: factory.address,
+    contract: "contracts/Factory.sol:Factory", //Filename.sol:ClassName
+    constructorArguments: [],
+ });
 }
 
 // We recommend this pattern to be able to use async/await everywhere

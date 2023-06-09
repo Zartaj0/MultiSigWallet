@@ -23,6 +23,10 @@ module.exports = {
       accounts: [process.env.PRIVATE_KEY1],
       url: process.env.ALCHEMY_GOERLI_URL
     },
+    sepolia: {
+      accounts: [process.env.PRIVATE_KEY1],
+      url: "https://rpc.sepolia.org"
+    },
     mumbai: {
       accounts: [process.env.PRIVATE_KEY1],
       url: process.env.ALCHEMY_MUMBAI_URL
@@ -31,7 +35,8 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: process.env.ETHERSCAN
+    // apiKey: process.env.ETHERSCAN
+    apiKey: process.env.POLYGONSCAN
   },
   gasReporter: {
     enabled: true,

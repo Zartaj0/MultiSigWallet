@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import "./Verify.sol";
 
 interface IERC20 {
     function transfer(address to, uint amount) external returns (bool);
@@ -49,6 +50,7 @@ contract MultiSig {
 
     //state Variables
     //uint256 i;
+    VerifySignature verification;
     uint256 public requiredApproval;
     bool public paused;
     address[] owners;
@@ -112,7 +114,7 @@ contract MultiSig {
 
     //modifiers
     modifier onlyOwner() {
-        if(!isOwner[msg.sender]){
+        if (!isOwner[msg.sender]) {
             revert("Not owner");
         }
         // require(isOwner[msg.sender], "you are not an owner");
@@ -120,7 +122,7 @@ contract MultiSig {
     }
 
     modifier txExist(uint256 _txIndex) {
-        if(_txIndex >= transactions.length){
+        if (_txIndex >= transactions.length) {
             revert();
         }
         // require(_txIndex < transactions.length, "transaction doesn't exist");
@@ -323,7 +325,38 @@ contract MultiSig {
         }
     }
 
+    //APPROVE VIA SIG
+    function approveTxViaSig(
+        address sender,
+        uint256 _txIndex,
+        bytes memory sign
+    ) external isPaused txExist(_txIndex) notExecuted(_txIndex) {
+        require(isOwner[sender]);
+        require(!confirmedTx[_txIndex][sender], "Already confirmedTx");
+
+        string memory message = "I allowed";
+        bool veri = verification.verify(sender, message, sign);
+        require(veri);
+
+        Transaction storage transaction = transactions[_txIndex];
+
+        confirmedTx[_txIndex][sender] = true;
+        unchecked {
+            transaction.confirmCount += 1;
+        }
+        if (transaction.confirmCount == requiredApproval) {
+            if (
+                transaction._type == Type.ERC20 ||
+                transaction._type == Type.Ether
+            ) {
+                executeTx(_txIndex);
+            }
+        }
+        emit Approved(sender, transactions[_txIndex], block.timestamp);
+    }
+
     // Approve transaction and Approve Proposals
+
     function approveTx(
         uint256 _txIndex
     )
@@ -368,8 +401,8 @@ contract MultiSig {
             }
         } else {
             confirmedProposal[_index][msg.sender] = true;
-            // unchecked { //Using more gas 
-                proposals[_index].confirmCount += 1;
+            // unchecked { //Using more gas
+            proposals[_index].confirmCount += 1;
             // }
             if (proposals[_index].confirmCount == requiredApproval) {
                 executeProposal(_index);

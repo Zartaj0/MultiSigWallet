@@ -12,6 +12,7 @@ let arrayOfPrivateKeys = [
     
 ]
 let arrayOfOwners =["0x69A0d70271fb5C402a73125D95fadA17C55aD89A","0x1af9C19A1513B9D05a7E5CaAd9F9239EF54fE2b1","0xD6E5C56b74841d333938860F7949faa8F991d88D"];
+let message = "I allowed"
 
 
 async function createWallet(
@@ -25,21 +26,24 @@ async function createWallet(
         let wallet = await new ethers.Wallet(i);
         let walletSigner = await wallet.connect(ethersProvider);
 
-            if (contract_address) {
+       const signature= await walletSigner.signMessage(message);
+        console.log(signature);
+
+            // if (contract_address) {
               
-                let contract = await new ethers.Contract(
-                    contract_address,
-                    send_abi,
-                    walletSigner
-                )
+            //     let contract = await new ethers.Contract(
+            //         contract_address,
+            //         send_abi,
+            //         walletSigner
+            //     )
 
             
                 
-                  await contract.CreateWallet(_address,3).then((transferResult) => {
-                        console.dir(transferResult)
-                    }).catch(error => console.log(error))
+            //       await contract.CreateWallet(_address,3).then((transferResult) => {
+            //             console.dir(transferResult)
+            //         }).catch(error => console.log(error))
                 
-            }
+            // }
     }
 
 }

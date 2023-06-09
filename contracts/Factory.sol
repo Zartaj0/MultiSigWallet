@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./MultiSig.sol";
 
-contract ZarFactory {
+contract Factory {
     event Created(MultiSig walletAddress, address creator);
 
     function createWallet(address[] memory _owners, uint requiredSignature) external {
