@@ -1,38 +1,39 @@
-const { expect } = require("chai");
-//const { ethers } = require("ethers");
+const { expect } = require("chai")
+const { ethers } = require("hardhat")
 
-async function getEther(amount) {
-    const ethAmount = await ethers.utils.parseEther(amount).toString();
-    return ethAmount;
-}
 
-describe.only("MultiSig", function () {
+describe("VerifySignature", function () {
+    it("Check signature", async function () {
+        const accounts = await ethers.getSigners()
+        console.log(accounts[0].address);
+        const VerifySignature = await ethers.getContractFactory("VerifySignature")
+        const contract = await VerifySignature.deploy()
+        await contract.deployed()
 
-    let multiSig;
-    let owner;
-    let owner1;
-    let owner2;
-    let owners;
-    let tokenAddress;
-    let token;
-    const zeroaddress = "0x0000000000000000000000000000000000000000";
+        // const PRIV_KEY = "0x..."
+        // const signer = new ethers.Wallet(PRIV_KEY)
+        const signer = accounts[0]
+        const to = accounts[1].address
+        const amount = 999
+        const message = "Hello"
+        const nonce = 123
 
-    beforeEach(async function () {
-        [owner, owner1, owner2, notOwner, ownerToAdd] = await ethers.getSigners();
-        owners = [owner, owner1, owner2];
+        const hash = await contract.getMessageHash(to, amount, message, nonce)
+        const sig = await signer.signMessage(ethers.utils.arrayify(hash))
 
-        const MultiSig = await ethers.getContractFactory("MultiSig");
-        multiSig = await MultiSig.deploy([owner.address, owner1.address, owner2.address], 2);
-        tx = {
-            to: multiSig.address,
-            value: ethers.utils.parseEther('10', 'ether')
-        };
-        const transaction = await owner.sendTransaction(tx);
+        const ethHash = await contract.getEthSignedMessageHash(hash)
 
-        const Token = await ethers.getContractFactory("Token");
-        token = await Token.deploy();
-        tokenAddress = token.address;
-        token.transfer(multiSig.address, 10000000);
+        console.log("signer          ", signer)
+        console.log("recovered signer", await contract.recoverSigner(ethHash, sig))
+
+        // Correct signature and message returns true
+        expect(
+          await contract.verify(signer.address, to, amount, message, nonce, sig)
+        ).to.equal(true)
+
+        // Incorrect message returns false
+        expect(
+          await contract.verify(signer.address, to, amount + 1, message, nonce, sig)
+        ).to.equal(false)
     })
-
-});
+})
