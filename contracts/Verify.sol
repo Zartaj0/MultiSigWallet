@@ -1,19 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-
-contract VerifySignature {
-
+library VerifySignature {
     function getMessageHash(
-        address _to,
-        uint _amount,
-        string memory _message,
+        uint _txIndex,
         uint _nonce
     ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_to, _amount, _message, _nonce));
+        return keccak256(abi.encodePacked(_txIndex, _nonce));
     }
 
- 
     function getEthSignedMessageHash(
         bytes32 _messageHash
     ) public pure returns (bytes32) {
@@ -23,19 +18,20 @@ contract VerifySignature {
         */
         return
             keccak256(
-                abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash)
+                abi.encodePacked(
+                    "\x19Ethereum Signed Message:\n32",
+                    _messageHash
+                )
             );
     }
 
     function verify(
         address _signer,
-        address _to,
-        uint _amount,
-        string memory _message,
+        uint _txIndex,
         uint _nonce,
         bytes memory signature
-    ) public pure returns (bool) {
-        bytes32 messageHash = getMessageHash(_to, _amount, _message, _nonce);
+    ) external pure returns (bool) {
+        bytes32 messageHash = getMessageHash(_txIndex, _nonce);
         bytes32 ethSignedMessageHash = getEthSignedMessageHash(messageHash);
 
         return recoverSigner(ethSignedMessageHash, signature) == _signer;
@@ -52,7 +48,7 @@ contract VerifySignature {
 
     function splitSignature(
         bytes memory sig
-    ) public pure returns (bytes32 r, bytes32 s, uint8 v) {
+    ) private pure returns (bytes32 r, bytes32 s, uint8 v) {
         require(sig.length == 65, "invalid signature length");
 
         assembly {
