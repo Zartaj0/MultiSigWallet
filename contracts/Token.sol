@@ -4,7 +4,7 @@
 /// @author Zartaj Afser
 /// @notice This is the standard interface for an ERC20 token
 
-pragma solidity ^0.8.16;
+pragma solidity ^0.8.0;
 
 interface IERC20 {
     function allowance(
