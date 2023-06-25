@@ -17,6 +17,8 @@ interface IERC20 {
 /// @dev This is the base contract. Users will create wallet from the factory contract.
 
 contract MultiSig {
+    using VerifySignature for address;
+    // using ECDSA for bytes32;
     //events
     event DepositedEther(address depositor, uint256 amount, uint256 timestamp);
     event DepositedErc20(
@@ -50,7 +52,6 @@ contract MultiSig {
 
     //state Variables
     //uint256 i;
-    VerifySignature verification;
     uint256 public requiredApproval;
     bool public paused;
     address[] owners;
@@ -66,6 +67,7 @@ contract MultiSig {
     mapping(uint256 => PolicyProposal) public PolicyMap;
     mapping(uint256 => PauseProposal) public PauseMap;
     mapping(uint256 => address) public TokenAddress;
+    mapping(address => uint) public nonce;
 
     //enum
     enum Type {
@@ -193,6 +195,7 @@ contract MultiSig {
 
     //write functions
 
+    // function addVerify(address _verify) external
     //Submit Proposals and Transactions
 
     function submitERC20Tx(
@@ -334,10 +337,7 @@ contract MultiSig {
         require(isOwner[sender]);
         require(!confirmedTx[_txIndex][sender], "Already confirmedTx");
 
-        string memory message = "I allowed";
-        bool veri = verification.verify(sender, message, sign);
-        require(veri);
-
+        require(sender.verify(_txIndex, nonce[sender], sign),"sig invalid");
         Transaction storage transaction = transactions[_txIndex];
 
         confirmedTx[_txIndex][sender] = true;
@@ -352,6 +352,7 @@ contract MultiSig {
                 executeTx(_txIndex);
             }
         }
+        nonce[sender]++;
         emit Approved(sender, transactions[_txIndex], block.timestamp);
     }
 
