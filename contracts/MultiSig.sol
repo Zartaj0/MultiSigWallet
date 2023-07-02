@@ -59,10 +59,10 @@ contract MultiSig {
     Proposal[] public proposals;
 
     //mapppings
-    mapping(address => bool) private isOwner;
-    mapping(address => uint) private ownerIndex;
-    mapping(uint256 => mapping(address => bool)) private confirmedTx;
-    mapping(uint256 => mapping(address => bool)) private confirmedProposal;
+    mapping(address => bool) public isOwner;
+    mapping(address => uint) public ownerIndex;
+    mapping(uint256 => mapping(address => bool)) public confirmedTx;
+    mapping(uint256 => mapping(address => bool)) public confirmedProposal;
     mapping(uint256 => OwnerProposal) public OwnerMap;
     mapping(uint256 => PolicyProposal) public PolicyMap;
     mapping(uint256 => PauseProposal) public PauseMap;
