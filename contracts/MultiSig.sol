@@ -8,8 +8,6 @@ interface IERC20 {
     function balanceOf(address owner) external view returns (uint);
 }
 
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 /// @title Multisig
 /// @author Zartaj
 /// @notice this contract serves you as a joint wallet where you and your partners can store your funds
@@ -18,7 +16,6 @@ interface IERC20 {
 
 contract MultiSig {
     using VerifySignature for address;
-    // using ECDSA for bytes32;
     //events
     event DepositedEther(address depositor, uint256 amount, uint256 timestamp);
     event DepositedErc20(
@@ -337,7 +334,7 @@ contract MultiSig {
         require(isOwner[sender]);
         require(!confirmedTx[_txIndex][sender], "Already confirmedTx");
 
-        require(sender.verify(_txIndex, nonce[sender], sign),"sig invalid");
+        require(sender.verify(_txIndex, nonce[sender], sign), "sig invalid");
         Transaction storage transaction = transactions[_txIndex];
 
         confirmedTx[_txIndex][sender] = true;
@@ -354,6 +351,38 @@ contract MultiSig {
         }
         nonce[sender]++;
         emit Approved(sender, transactions[_txIndex], block.timestamp);
+    }
+
+    function approveProposalViaSig(
+        address sender,
+        uint256 _index,
+        bytes memory sign
+    ) external onlyOwner {
+        require(_index < proposals.length, "invalid index");
+        require(!proposals[_index].executed, "Already executed");
+        require(!confirmedProposal[_index][sender], "Already approved");
+
+        require(sender.verify(_index, nonce[sender], sign), "sig invalid");
+
+        if (proposals[_index].proposalType != ProposalType.pause) {
+            require(!paused, "wallet is paused");
+
+            confirmedProposal[_index][msg.sender] = true;
+            // unchecked { //Using more gas
+            proposals[_index].confirmCount += 1;
+            // }
+            if (proposals[_index].confirmCount == requiredApproval) {
+                executeProposal(_index);
+            }
+        } else {
+            confirmedProposal[_index][msg.sender] = true;
+            // unchecked { //Using more gas
+            proposals[_index].confirmCount += 1;
+            // }
+            if (proposals[_index].confirmCount == requiredApproval) {
+                executeProposal(_index);
+            }
+        }
     }
 
     // Approve transaction and Approve Proposals
