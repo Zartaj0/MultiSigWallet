@@ -109,22 +109,29 @@ describe("Ether Transactions approval and execution", async function () {
     await expect(multiSig.connect(owner).approveTx(0)).to.be.rejected;
 
   })
-  // it("owner other than who submitted transaction can approve transaction", async function () {
+  it("owner other than who submitted transaction can approve transaction", async function () {
 
-  //   await expect(multiSig.connect(owner1).approveTx(0)).to.be.fulfilled;
+    await expect(multiSig.connect(owner1).approveTx(0)).to.be.fulfilled;
 
-  // });
+  });
   it("non-owner should not be able to approve transaction", async function () {
     await expect(multiSig.connect(notOwner).approveTx(0)).to.be.revertedWith("Not owner");
 
   });
 
-  it("owner can sign the tx", async function () {
+  it("owner can sign the tx and signature replay should be prevented", async function () {
     const hash = await lib.getMessageHash(0, 0)
     const sig = await owner1.signMessage(ethers.utils.arrayify(hash))
     await expect(multiSig.connect(notOwner).approveTxViaSig(owner1.address, 0, sig)).to.be.fulfilled;
-
+    
+    multiSig.connect(owner).submitEtherTx(notOwner.address, getEther("3"));
+    await expect(multiSig.connect(notOwner).approveTxViaSig(owner1.address, 1, sig)).to.be.reverted;
+    const hash1 = await lib.getMessageHash(1, 1)
+    const sig1 = await owner1.signMessage(ethers.utils.arrayify(hash1))
+    await expect(multiSig.connect(notOwner).approveTxViaSig(owner1.address, 1, sig1)).to.be.fulfilled;
+ 
   });
+  
   it("recipient should get the ether after transaction is approved", async function () {
     let balanceBefore = BigInt(await ethers.provider.getBalance(notOwner.address));
     let newBalance = BigInt(await ethers.utils.parseEther("3"));
@@ -153,6 +160,17 @@ describe("approval of ERC20 tx", async () => {
   it("non-owner should not be able to approve the transaction", async () => {
     await expect(multiSig.connect(notOwner).approveTx(0)).to.be.revertedWith("Not owner");
   })
+
+  it("owner can sign the tx and signature replay should be prevented", async function () {
+    const hash = await lib.getMessageHash(0, 0)
+    const sig = await owner1.signMessage(ethers.utils.arrayify(hash))
+    await expect(multiSig.connect(notOwner).approveTxViaSig(owner1.address, 0, sig)).to.be.fulfilled;
+    
+    const hash1 = await lib.getMessageHash(1, 1)
+    const sig1 = await owner.signMessage(ethers.utils.arrayify(hash1))
+    await expect(multiSig.connect(notOwner).approveTxViaSig(owner1.address, 1, sig1)).to.be.fulfilled;
+ 
+  });
   it("after getting required approval transaction should execute", async () => {
     await multiSig.approveTx(1)
     let arr = (await multiSig.transactions(1));
