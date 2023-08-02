@@ -146,6 +146,7 @@ describe("approval of ERC20 tx", async () => {
   beforeEach(async () => {
     await multiSig.submitERC20Tx(notOwner.address, tokenAddress, 100000);
     await multiSig.connect(owner1).submitERC20Tx(notOwner.address, tokenAddress, 100000);
+    await multiSig.connect(owner1).submitERC20Tx(notOwner.address, tokenAddress, 100000);
   })
   it("owner is able to approve the transaction", async () => {
 
@@ -166,9 +167,10 @@ describe("approval of ERC20 tx", async () => {
     const sig = await owner1.signMessage(ethers.utils.arrayify(hash))
     await expect(multiSig.connect(notOwner).approveTxViaSig(owner1.address, 0, sig)).to.be.fulfilled;
     
-    const hash1 = await lib.getMessageHash(1, 1)
+    const hash1 = await lib.getMessageHash(1, 0)
     const sig1 = await owner.signMessage(ethers.utils.arrayify(hash1))
-    await expect(multiSig.connect(notOwner).approveTxViaSig(owner1.address, 1, sig1)).to.be.fulfilled;
+    await expect(multiSig.connect(notOwner).approveTxViaSig(owner.address, 1, sig1)).to.be.fulfilled;
+    await expect(multiSig.connect(notOwner).approveTxViaSig(owner.address, 2, sig1)).to.be.revertedWith("sig invalid");
  
   });
   it("after getting required approval transaction should execute", async () => {
