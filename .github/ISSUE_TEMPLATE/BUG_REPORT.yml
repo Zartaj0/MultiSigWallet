@@ -55,13 +55,13 @@ body:
   - type: dropdown
     id: dapp-env
     attributes:
-      label: "Dapp Env"
-      description: What is the impacted DApp environment ?
+      label: "Contract Name"
+      description: What is the impacted Contract ?
       multiple: true
       options:
-        - Prod (app.push.org)
-        - Staging (staging.push.org)
-        - Dev (dev.push.org)
+        - Core Contract
+        - Comm Contract
+        - Push Token
     validations:
       required: true
   - type: dropdown
