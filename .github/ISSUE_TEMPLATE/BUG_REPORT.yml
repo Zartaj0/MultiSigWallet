@@ -1,9 +1,7 @@
 name: "🐛 Bug Report"
 description: Create a bug report to help us improve.
 title: "🐛 [BUG] - <title>"
-labels: [
-  "bug"
-]
+labels: ["bug"]
 body:
   - type: textarea
     id: expected-behaviour
@@ -44,12 +42,12 @@ body:
       render: bash
     validations:
       required: false
-  - type: textarea
-    id: logs
+  - type: input
+    id: POC-url
     attributes:
-      label: "Relevant Logs"
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: bash
+      label: "POC if available"
+      description: Please enter POC url, if available
+      placeholder: POC Link
     validations:
       required: false
   - type: dropdown
