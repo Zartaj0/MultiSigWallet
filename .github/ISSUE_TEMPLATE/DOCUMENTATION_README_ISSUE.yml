@@ -34,12 +34,3 @@ body:
       render: bash
     validations:
       required: false
-- type: input
-    id: POC-url
-    attributes:
-      label: "POC if available"
-      description: Please enter POC url, if available
-      placeholder: POC Link
-    validations:
-      required: false
-      
