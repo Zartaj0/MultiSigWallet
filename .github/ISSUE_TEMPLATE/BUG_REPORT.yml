@@ -74,7 +74,6 @@ body:
         - Mainnet(Ethereum)
         - Testnet(Goerli)
         - Polygon
-        -  Edge
-        - Opera
+        - BSC
     validations:
       required: false
