@@ -53,7 +53,7 @@ body:
     validations:
       required: false
   - type: dropdown
-    id: dapp-env
+    id: contracts
     attributes:
       label: "Contract Name"
       description: What is the impacted Contract ?
