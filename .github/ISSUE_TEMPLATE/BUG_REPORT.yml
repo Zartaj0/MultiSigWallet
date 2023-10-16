@@ -1,9 +1,7 @@
 name: "🐛 Bug Report"
 description: Create a bug report to help us improve.
 title: "🐛 [BUG] - <title>"
-labels: [
-  "bug"
-]
+labels: ["bug"]
 body:
   - type: textarea
     id: expected-behaviour
@@ -56,7 +54,7 @@ body:
     id: contracts
     attributes:
       label: "Contract Name"
-      description: What is the impacted Contract ?
+      description: What are the impacted Contract(s) ?
       multiple: true
       options:
         - Core Contract
@@ -65,16 +63,15 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: browsers
+    id: contract chain
     attributes:
-      label: "Browsers"
-      description: What browsers are you seeing the problem on ?
+      label: "Chains"
+      description: On what chain this problem is seen?
       multiple: true
       options:
-        - Firefox
-        - Chrome
-        - Safari
-        - Microsoft Edge
-        - Opera
+        - Mainnet(Ethereum)
+        - Testnet(Goerli)
+        - Polygon
+        - BSC
     validations:
       required: false
