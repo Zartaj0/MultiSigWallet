@@ -20,21 +20,11 @@ body:
     validations:
       required: true
   - type: input
-    id: figma-url
+    id: POC-url
     attributes:
-      label: "Figma Design if available"
-      description: Please enter figma designs url, if available
-      placeholder: Figma Link
-    validations:
-      required: false
-  - type: textarea
-    id: screenshot
-    attributes:
-      label: "Screenshots"
-      description: If applicable, add screenshots to help explain the enhancement.
-      value: |
-        ![DESCRIPTION](LINK.png)
-      render: bash
+      label: "POC if available"
+      description: Please enter POC url, if available
+      placeholder: POC Link
     validations:
       required: false
   - type: dropdown
